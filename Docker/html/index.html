@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+  <!-- This is the head, use this for all external resources, stylesheets, etc. and information for the browser like SEO tags -->
+  <head>
+    <title> Twitter Fake Account Detection </title>
+    <!-- This adds gridlex for our grids and columns -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gridlex/2.7.1/gridlex.min.css">
+    <!-- This adds our Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Halant:wght@300;400&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+    <!-- This adds our custom styles and always goes at the bottom -->
+    <link href="style.css" rel="stylesheet">
+  </head>
+
+  <!-- This is the body which contains all elements on the page -->
+  <body>
+    <header class="grid bg-light">
+      <div class="col-6">
+        <h1> Twitter Fake Account Detection </h1>
+      </div>
+     <nav class="col-5-middle right">
+        <a class="nav-item" href="#EDA-section" class="nav-link" > EDA  </a>
+        <a class="nav-item" href="#network-section" class="nav-link" >  Network Graph  </a>
+         <a href="https://www.hwr-berlin.de/en/study/degree-programmes/detail/13-business-intelligence-and-process-management/" target="blank"> BIPM  </a>
+        <a href="https://github.com/vvanoyan/Big_data_project" target="blank">  GitHub  </a>
+        <a href="http://mib.projects.iit.cnr.it/dataset.html" target="blank">  Our Dataset </a>
+    </nav>
+    </header>
+
+
+    <!-- EDA -->
+    <section class="grid" id="EDA-section">
+      <div class="col-12 padded">
+        <h1> EDA </h1>
+        <p> </p>
+        <p> </p>
+        <h2> Distribution of Account and Tweet Types</h2>
+        <p>Initial data has a total of 10,197 unique users which are classified into three main categories: </p>
+         <p>
+          <ul>
+            <li> Real users: Genuine Twitter users</li>
+            <li> Fake users: Users that hide their real identities which follow real users to increase their popularity</li>
+            <li> Spam users: Users that post information/tweets with an agenda of increasing interest in a particular topic</li>
+          </ul>
+        </p>        
+      </div>
+    <div class="row">
+      <div class="bg-image column">
+        <img src="num_accounts_type.png" width="550" height="550">
+      </div>
+      <div class="bg-image column">
+        <img src="num_tweets_type.png" width="550" height="550">
+      </div>
+      </section>
+
+    <section class="grid">    
+      <div class="col-12 padded">
+        <h2> Source Distribution of Real, Fake, Spam Tweets </h2>
+        <p> A good indicator to classify accounts as real, fake, or spam: </p>
+        <p>
+          <ul>
+            <li> Real users mostly use Twitter mobile apps to post tweets</li>
+            <li> Fake accounts and spam bots mostly use web or 3rd party spamming software. We can assume some kinds of automation have been used to post tweets</li>
+          </ul>
+        </p> 
+      </div>
+    <div class="row">
+      <div class="bg-image column03">
+        <img src="Spam_num_tweets_source.png" width="550" height="550">
+      </div>
+      <div class="bg-image column03">
+        <img src="Fake_num_tweets_source.png" width="550" height="550">
+      </div>
+      <div class="bg-image column03">
+        <img src="Real_num_tweets_source.png" width="550" height="550">
+      </div>
+      </section>
+
+    <section class="grid">    
+      <div class="col-12 padded">
+        <h2> Time Distribution of Real, Fake, Spam Tweets </h2>
+        <p> Another good indicator to classify accounts as real, fake, or spam: </p>
+        <p>
+          <ul>
+            <li> For real tweets, there is a clear indication that during 9h00-15h00, there is a passivenesss of activities</li>
+            <li> Activities for fake accounts and spam bots seem to happen more after 15h00 </li>
+          </ul>
+        </p> 
+      </div>
+    <div class="row">
+      <div class="bg-image column03">
+        <img src="Spam_num_tweets_time.png" width="550" height="550">
+      </div>
+      <div class="bg-image column03">
+        <img src="Fake_num_tweets_time.png" width="550" height="550">
+      </div>
+      <div class="bg-image column03">
+        <img src="Real_num_tweets_time.png" width="550" height="550">
+      </div>
+      </section>
+
+    <section class="grid">    
+      <div class="col-12 padded">
+        <h2> WordCloud for Real, Fake, and Spam Tweets </h2>
+        <p> Here are the wordcloud graphs for each tweet types: </p>
+        <p>
+          <ul>
+            <li> Real tweets keywords are mainly in English </li>
+            <li> Seems like fake and spam tweets tend to be more in different foreign languages such as Spanish, Italian, etc. </li>
+          </ul>
+        </p> 
+      </div>
+    <div class="row">
+      <div class="bg-image column03">
+        <img src="Spam_worldcloud.png" width="510" height="550">
+      </div>
+      <div class="bg-image column03">
+        <img src="Fake_worldcloud.png" width="510" height="550">
+      </div>
+      <div class="bg-image column03">
+        <img src="Real_worldcloud.png" width="510" height="550">
+      </div>
+      <p> </p>
+      <p> </p>
+    </div>
+    </section>
+
+    <!-- NETWORK GRAPHS ANALYSIS:-->
+    <section class="grid" id="network-section">
+      <div class="col-5 padded">
+        <h1> Network Graph Analysis </h1>
+        <p> </p>
+        <p> </p>
+        <h2> Twitter Network Graph </h2>
+        <p> Who follows Whom?</p> 
+        <p> Creating the network graph using draw_networkx() function, and the nodes being colored to their account types: </p>
+         <p> 
+          <ul>
+            <li> Real accounts: light blue </li>
+            <li> Fake accounts: yellow </li>
+            <li> Spam bots: red </li>
+          </ul>
+        </p>      
+      </div>
+      <div class="bg-image">
+        <img src="plot_01.png" width="620" height="620">
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="bg-image col-7 padded">
+        <img src="plot_02.png" width="560" height="560">
+      </div>
+      <div class="col-5 padded">
+        <h2> Twitter Network Graph #2 </h2>
+        <p> Who follows Whom?</p> 
+        <p> Creating the network graph using draw() function, and the nodes being colored to their account types as the previous graph </p>
+         <p>
+          <ul>
+            <li> The default settings of the function allow us to see more of the nodes orientation </li>
+            <li> We can see the orientation of edges, where there is an aggregation of yellow and red nodes (fake accounts and spam bots)</li>
+          </ul>
+        </p>        
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="col-5  padded">
+        <h2> Betweenness Centrality as Node Size </h2>
+        <p> Betweenness centrality captures the importance of a node for the flow of information within the network. Are there some correlation between account type and betweennness centrality? </p>
+        <p>
+          <ul>
+            <li> A node betweenness measure is represented by the node size, so the bigger the node the higher its betweenness </li>
+            <li> Most of the bigger nodes are blue, and many nodes seem to disappear from the map because their betweeness centrality is so small</li>
+            <li>It seems that a high betweenness measure is a good indicator for a real account</li>
+          </ul>
+        </p>        
+      </div>
+      </div>
+      <div class="bg-image">
+        <img src="plot_03.png" width="620" height="620">
+      </div>
+    </section>
+
+        <section class="grid">
+      <div class="col-12 padded">
+        <h2> Betweenness Centrality as Color Scheme and Out-Degree/In-Degree</h2>
+        <p>Is there a relationship between betweenness centrality and out-degree centrality or in-degree centrality? </p> 
+         <p>
+          <ul>
+            <li> Out-degree: describes how many edges originate from that node or how many times that account is retweeted by other users</li>
+            <li> In-degree: describes how many times a node is a sink node or how many times a user retweets other accounts</li>
+          </ul>
+        </p>        
+      </div>
+    <div class="row">
+      <div class="bg-image column">
+        <img src="plot_05.png" width="620" height="620">
+      </div>
+      <div class="bg-image column">
+        <img src="plot_04.png" width="620" height="620">
+      </div>
+      </section>
+
+    <section class="grid">
+      <div class="bg-image col-7 padded">
+        <img src="plot_06.png" width="600" height="600">
+      </div>
+      <div class="col-5 padded">
+        <h2> Most Retweeting User </h2>
+        <p> What kind of accounts is this account retweeting from? </p>
+        <p>
+          <ul>
+            <li> Abbracciati&Baciati is a spam bot and all its retweets come from other spam bots</li>
+            <li> This account retweeted from 382 different other accounts </li>
+          </ul>
+        </p> 
+      </div>
+    </section>
+
+    <footer class="bg-featured">
+      <h2> Thank you for viewing our analysis </h2>
+      <p> For the full analysis of our graphs, view our Github and notebooks by clicking on the button below. </p>
+      <a href="https://github.com/vvanoyan/Big_data_project" target="_blank" class="button"> Click Here </a>
+    </footer>
+  </body>
+</html>

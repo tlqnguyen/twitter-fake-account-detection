@@ -1,0 +1,168 @@
+# Upload File into SENECA and HDFS
+upload file into localhost ssh path (myLocalPath)
+pip install --user numpy
+
+hadoop fs -mkdir tweet_hdfs
+hadoop fs -put myLocalPath tweet_hdfs
+hadoop fs -ls tweet_hdfs
+
+
+# Start PySpark
+pyspark
+
+
+## RawData Ingestion and Extraction
+RawData = sqlContext.read.format('com.databricks.spark.csv').options(header='true', inferschema='true').load('tweet_hdfs/tweets_graph_class.csv')
+RawData.show(5)
+
+drop_list = ['_c0']
+RawData = RawData.select([column for column in RawData.columns if column not in drop_list])
+
+RawData.show(5)
+RawData.printSchema()
+
+RawData=RawData.filter("type is not null")
+RawData=RawData.filter("text is not null")
+
+from pyspark.sql.functions import col
+RawData.groupBy('type').count().orderBy(col('count').desc()).show()
+RawData=RawData.filter("type=='spam' OR type=='fake' OR type=='real'") # remove other types 
+
+
+## Model Pipeline
+# LOGISTIC REGRESSION
+from pyspark.ml.feature import RegexTokenizer, StopWordsRemover, CountVectorizer
+from pyspark.ml.classification import LogisticRegression
+
+regexTokenizer = RegexTokenizer(inputCol="text", outputCol="words", pattern="\\W")
+
+add_stopwords = ["http","https","amp","rt","t","c","the"] 
+
+stopwordsRemover = StopWordsRemover(inputCol="words", outputCol="filtered").setStopWords(add_stopwords)
+
+# bag of words count
+countVectors = CountVectorizer(inputCol="filtered", outputCol="features", vocabSize=10000, minDF=5)
+
+
+# StringIndexer
+from pyspark.ml import Pipeline
+from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorAssembler
+
+label_stringIdx = StringIndexer(inputCol = "type", outputCol = "label")
+
+pipeline = Pipeline(stages=[regexTokenizer, stopwordsRemover, countVectors, label_stringIdx])
+RawData=RawData.filter("type is not null")
+
+
+# Fit the pipeline to training documents
+pipelineFit = pipeline.fit(RawData)
+dataset = pipelineFit.transform(RawData)
+dataset.show(5)
+
+
+# Partition Training & Test sets
+(trainingData, testData) = dataset.randomSplit([0.7, 0.3], seed = 100)
+print("Training Dataset Count: " + str(trainingData.count()))
+print("Test Dataset Count: " + str(testData.count()))
+
+
+# 1. Look into Logistic Regression using Count Vector Features
+lr = LogisticRegression(maxIter=20, regParam=0.3, elasticNetParam=0)
+lrModel = lr.fit(trainingData)
+
+predictions = lrModel.transform(testData)
+
+predictions.filter(predictions['prediction'] == 0).select("text","type","probability","label","prediction").orderBy("probability", ascending=False).show(n = 10, truncate = 30)
+
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+evaluator = MulticlassClassificationEvaluator(predictionCol="prediction")
+evaluator.evaluate(predictions)
+# 0.8439760612793012 
+
+
+
+## Model Training and Evaluation
+# 2. Logistic regression with TF-IDF
+
+from pyspark.ml.feature import HashingTF, IDF
+hashingTF = HashingTF(inputCol="filtered", outputCol="rawFeatures", numFeatures=10000)
+idf = IDF(inputCol="rawFeatures", outputCol="features", minDocFreq=5)
+pipeline = Pipeline(stages=[regexTokenizer, stopwordsRemover, hashingTF, idf, label_stringIdx])
+pipelineFit = pipeline.fit(RawData)
+dataset = pipelineFit.transform(RawData)
+(trainingData, testData) = dataset.randomSplit([0.7, 0.3], seed = 100)
+
+lr = LogisticRegression(maxIter=20, regParam=0.3, elasticNetParam=0) 
+lrModel = lr.fit(trainingData) # failed to load implementation from: com.github.fommil.netlib.NativeSystemBLAS
+
+predictions.filter(predictions['prediction'] == 0).select("text","type","probability","label","prediction").orderBy("probability", ascending=False).show(n = 10, truncate = 30)
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+evaluator = MulticlassClassificationEvaluator(predictionCol="prediction")
+evaluator.evaluate(predictions)
+# 0.8439760612793012 
+
+
+
+# 3. Cross-Validation: Grid Search
+pipeline = Pipeline(stages=[regexTokenizer, stopwordsRemover, hashingTF, idf, label_stringIdx])
+pipelineFit = pipeline.fit(RawData)
+dataset = pipelineFit.transform(RawData)
+(trainingData, testData) = dataset.randomSplit([0.7, 0.3], seed = 100)
+lr = LogisticRegression(maxIter=20, regParam=0.3, elasticNetParam=0)
+
+from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
+
+paramGrid = (ParamGridBuilder().addGrid(lr.regParam, [0.1, 0.3, 0.5]).addGrid(lr.elasticNetParam, [0.0, 0.1, 0.2]).build())
+cv = CrossValidator(estimator=lr,estimatorParamMaps=paramGrid,evaluator=evaluator,numFolds=5)
+cvModel = cv.fit(trainingData) # 15 mins
+predictions = cvModel.transform(testData)
+
+# Get best model parameters
+bestModel = cvModel.bestModel
+bestModel._java_obj.getRegParam()
+bestModel._java_obj.getElasticNetParam()
+
+# Evaluate best model
+evaluator = MulticlassClassificationEvaluator(predictionCol="prediction")
+evaluator.evaluate(predictions) 
+# 0.8729054491878244!!!
+
+
+
+# 4. Naive Bayes 
+from pyspark.ml.classification import NaiveBayes
+nb = NaiveBayes(smoothing=1)
+
+model = nb.fit(trainingData)
+predictions = model.transform(testData)
+
+predictions.filter(predictions['prediction'] == 0).select("text","type","probability","label","prediction").orderBy("probability", ascending=False).show(n = 10, truncate = 30)
+
+evaluator = MulticlassClassificationEvaluator(predictionCol="prediction")
+evaluator.evaluate(predictions)
+# 0.7834613279043956
+
+
+
+# 5. Random Forest
+from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+rf = RandomForestClassifier(labelCol="label",featuresCol="features",numTrees = 100, maxDepth = 4, maxBins = 32)
+
+rfModel = rf.fit(trainingData)
+predictions = rfModel.transform(testData)
+
+predictions.filter(predictions['prediction'] == 0).select("text","type","probability","label","prediction").orderBy("probability", ascending=False).show(n = 10, truncate = 30)
+
+evaluator = MulticlassClassificationEvaluator(predictionCol="prediction")
+evaluator.evaluate(predictions)
+
+
+
+# distribution
+# +--------------------+-------+                                                  
+# |                type|  count|
+# +--------------------+-------+
+# |                spam|3435605|
+# |                real|2809948|
+# |                fake| 193700|
